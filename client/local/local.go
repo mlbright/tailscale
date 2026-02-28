@@ -1422,3 +1422,41 @@ func (lc *Client) GetAppConnectorRouteInfo(ctx context.Context) (appctype.RouteI
 	}
 	return decodeJSON[appctype.RouteInfo](body)
 }
+
+// VXLANMirrorStatus represents the status of the VXLAN packet mirror.
+type VXLANMirrorStatus struct {
+	Running     bool   `json:"running"`
+	Destination string `json:"destination,omitempty"`
+	VNI         uint32 `json:"vni,omitzero"`
+	FullPacket  bool   `json:"fullPacket,omitzero"`
+}
+
+// VXLANMirrorConfig is the configuration for the VXLAN mirror.
+type VXLANMirrorConfig struct {
+	Enabled     bool   `json:"enabled"`
+	Destination string `json:"destination,omitempty"`
+	VNI         uint32 `json:"vni,omitzero"`
+	FullPacket  bool   `json:"fullPacket,omitzero"`
+}
+
+// GetVXLANMirrorStatus returns the current VXLAN mirror status.
+func (lc *Client) GetVXLANMirrorStatus(ctx context.Context) (VXLANMirrorStatus, error) {
+	body, err := lc.get200(ctx, "/localapi/v0/debug-vxlan-mirror")
+	if err != nil {
+		return VXLANMirrorStatus{}, err
+	}
+	return decodeJSON[VXLANMirrorStatus](body)
+}
+
+// SetVXLANMirror configures the VXLAN mirror.
+func (lc *Client) SetVXLANMirror(ctx context.Context, cfg VXLANMirrorConfig) (VXLANMirrorStatus, error) {
+	body, err := json.Marshal(cfg)
+	if err != nil {
+		return VXLANMirrorStatus{}, err
+	}
+	resp, err := lc.send(ctx, "POST", "/localapi/v0/debug-vxlan-mirror", 200, bytes.NewReader(body))
+	if err != nil {
+		return VXLANMirrorStatus{}, err
+	}
+	return decodeJSON[VXLANMirrorStatus](resp)
+}

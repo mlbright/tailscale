@@ -267,6 +267,10 @@ type Conn struct {
 	// captureHook, if non-nil, is the pcap logging callback when capturing.
 	captureHook syncs.AtomicValue[packet.CaptureCallback]
 
+	// mirrorHook, if non-nil, is called for each outbound encrypted
+	// WireGuard packet batch to replicate packets to a collector.
+	mirrorHook syncs.AtomicValue[packet.MirrorCallback]
+
 	// hasPeerRelayServers is whether [relayManager] is configured with at least
 	// one peer relay server via [relayManager.handleRelayServersSet]. It exists
 	// to suppress calls into [relayManager] leading to wasted work involving
@@ -853,6 +857,13 @@ func (c *Conn) InstallCaptureHook(cb packet.CaptureCallback) {
 		return
 	}
 	c.captureHook.Store(cb)
+}
+
+// InstallMirrorHook installs a callback which is called for each
+// outbound encrypted WireGuard packet batch to replicate packets to
+// a downstream collector. Pass nil to uninstall.
+func (c *Conn) InstallMirrorHook(cb packet.MirrorCallback) {
+	c.mirrorHook.Store(cb)
 }
 
 // doPeriodicSTUN is called (in a new goroutine) by
@@ -1466,13 +1477,21 @@ func (c *Conn) Send(buffs [][]byte, ep conn.Endpoint, offset int) (err error) {
 		metricSendDataNetworkDown.Add(n)
 		return errNetworkDown
 	}
+
+	// Mirror outbound encrypted packets if a hook is installed.
+	// The hook is invoked deeper in the send path (endpoint.send /
+	// lazyEndpoint) where the resolved source and destination
+	// addresses are available for inner IP+UDP header synthesis.
+
 	switch ep := ep.(type) {
 	case *endpoint:
 		return ep.send(buffs, offset)
 	case *lazyEndpoint:
-		// A [*lazyEndpoint] may end up on this TX codepath when wireguard-go is
-		// deemed "under handshake load" and ends up transmitting a cookie reply
-		// using the received [conn.Endpoint] in [device.SendHandshakeCookie].
+		dst := ep.src.ap
+		if mirrorHook := c.mirrorHook.Load(); mirrorHook != nil {
+			src := netip.AddrPortFrom(dst.Addr().Unmap(), c.LocalPort())
+			mirrorHook(buffs, offset, src, dst)
+		}
 		if ep.src.ap.Addr().Is6() {
 			return c.pconn6.WriteWireGuardBatchTo(buffs, ep.src, offset)
 		}

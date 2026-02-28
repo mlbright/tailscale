@@ -291,7 +291,8 @@ var Features = map[FeatureTag]FeatureMeta{
 		Sym:  "UserMetrics",
 		Desc: "Usermetrics (documented, stable) metrics support",
 	},
-	"wakeonlan": {Sym: "WakeOnLAN", Desc: "Wake-on-LAN support"},
+	"vxlanmirror": {Sym: "VXLANMirror", Desc: "VXLAN packet mirror for replicating encrypted WireGuard packets to a collector"},
+	"wakeonlan":   {Sym: "WakeOnLAN", Desc: "Wake-on-LAN support"},
 	"webbrowser": {
 		Sym:  "WebBrowser",
 		Desc: "Open URLs in the user's web browser",

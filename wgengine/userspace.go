@@ -1885,6 +1885,10 @@ func (e *userspaceEngine) InstallCaptureHook(cb packet.CaptureCallback) {
 	e.magicConn.InstallCaptureHook(cb)
 }
 
+func (e *userspaceEngine) InstallMirrorHook(cb packet.MirrorCallback) {
+	e.magicConn.InstallMirrorHook(cb)
+}
+
 func (e *userspaceEngine) reconfigureVPNIfNecessary() error {
 	if e.reconfigureVPN == nil {
 		return nil

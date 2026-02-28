@@ -137,4 +137,9 @@ type Engine interface {
 	// packets traversing the data path. The hook can be uninstalled by
 	// calling this function with a nil value.
 	InstallCaptureHook(packet.CaptureCallback)
+
+	// InstallMirrorHook registers a function to be called for each
+	// outbound encrypted WireGuard packet batch, allowing replication
+	// to a downstream collector. Pass nil to uninstall.
+	InstallMirrorHook(packet.MirrorCallback)
 }

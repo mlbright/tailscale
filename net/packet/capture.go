@@ -4,6 +4,7 @@
 package packet
 
 import (
+	"errors"
 	"io"
 	"net/netip"
 	"time"
@@ -15,6 +16,33 @@ import (
 // provided data slice: it may only copy out of it
 // within the lifetime of the function.
 type CaptureCallback func(CapturePath, time.Time, []byte, CaptureMeta)
+
+// MirrorCallback is called for each batch of outbound encrypted
+// WireGuard packets to replicate them to a downstream collector.
+// buffs contains the raw packet buffers; offset is where the
+// WireGuard payload begins in each buffer. src and dst are the local
+// and remote UDP endpoints of the WireGuard tunnel so the mirror can
+// synthesize inner IP+UDP headers. Implementations must not retain
+// the buffer slices beyond the call.
+type MirrorCallback func(buffs [][]byte, offset int, src, dst netip.AddrPort)
+
+// PacketMirror is the minimal interface needed by the core
+// (LocalBackend/wgengine) to manage a VXLAN packet mirror.
+// The full implementation lives in feature/vxlanmirror.
+type PacketMirror interface {
+	// Start begins mirroring to the given destination.
+	Start(dst netip.AddrPort, vni uint32, fullPacket bool) error
+	// Stop halts packet mirroring.
+	Stop()
+	// Running reports whether mirroring is active.
+	Running() bool
+	// MirrorCallback returns the callback for wiring into the engine.
+	MirrorCallback() MirrorCallback
+}
+
+// ErrMirrorUnavailable indicates the vxlanmirror feature is not
+// compiled into this binary.
+var ErrMirrorUnavailable = errors.New("vxlan mirror feature not available in this build")
 
 // CaptureSink is the minimal interface from [tailscale.com/feature/capture]'s
 // Sink type that is needed by the core (magicsock/LocalBackend/wgengine/etc).

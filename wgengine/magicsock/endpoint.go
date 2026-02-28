@@ -1059,6 +1059,17 @@ func (de *endpoint) send(buffs [][]byte, offset int) error {
 	de.lastSendAny = now
 	de.mu.Unlock()
 
+	// Mirror outbound encrypted packets if a hook is installed.
+	// At this point we know the resolved destination address.
+	if mirrorHook := de.c.mirrorHook.Load(); mirrorHook != nil {
+		dst := udpAddr.ap
+		if !dst.IsValid() {
+			dst = derpAddr
+		}
+		src := netip.AddrPortFrom(dst.Addr().Unmap(), de.c.LocalPort())
+		mirrorHook(buffs, offset, src, dst)
+	}
+
 	if !udpAddr.ap.IsValid() && !derpAddr.IsValid() {
 		// Make a last ditch effort to see if we have a DERP route for them. If
 		// they contacted us over DERP and we don't know their UDP endpoints or

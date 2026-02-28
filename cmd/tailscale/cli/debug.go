@@ -51,9 +51,10 @@ import (
 )
 
 var (
-	debugCaptureCmd   func() *ffcli.Command // or nil
-	debugPortmapCmd   func() *ffcli.Command // or nil
-	debugPeerRelayCmd func() *ffcli.Command // or nil
+	debugCaptureCmd     func() *ffcli.Command // or nil
+	debugPortmapCmd     func() *ffcli.Command // or nil
+	debugPeerRelayCmd   func() *ffcli.Command // or nil
+	debugVXLANMirrorCmd func() *ffcli.Command // or nil
 )
 
 func debugCmd() *ffcli.Command {
@@ -336,6 +337,7 @@ func debugCmd() *ffcli.Command {
 			},
 			ccall(debugCaptureCmd),
 			ccall(debugPortmapCmd),
+			ccall(debugVXLANMirrorCmd),
 			{
 				Name:       "peer-endpoint-changes",
 				ShortUsage: "tailscale debug peer-endpoint-changes <hostname-or-IP>",

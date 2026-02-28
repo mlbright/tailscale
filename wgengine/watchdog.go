@@ -239,6 +239,10 @@ func (e *watchdogEngine) InstallCaptureHook(cb packet.CaptureCallback) {
 	e.wrap.InstallCaptureHook(cb)
 }
 
+func (e *watchdogEngine) InstallMirrorHook(cb packet.MirrorCallback) {
+	e.wrap.InstallMirrorHook(cb)
+}
+
 func (e *watchdogEngine) PeerByKey(pubKey key.NodePublic) (_ wgint.Peer, ok bool) {
 	return e.wrap.PeerByKey(pubKey)
 }

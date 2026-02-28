@@ -215,6 +215,7 @@ type LocalBackend struct {
 	exposeRemoteWebClientAtomicBool atomic.Bool // TODO(nickkhyl): move to nodeBackend
 	shutdownCalled                  bool        // if Shutdown has been called
 	debugSink                       packet.CaptureSink
+	vxlanMirror                     packet.PacketMirror // or nil
 	sockstatLogger                  *sockstatlog.Logger
 
 	// getTCPHandlerForFunnelFlow returns a handler for an incoming TCP flow for
@@ -1180,6 +1181,11 @@ func (b *LocalBackend) Shutdown() {
 		b.e.InstallCaptureHook(nil)
 		b.debugSink.Close()
 		b.debugSink = nil
+	}
+	if b.vxlanMirror != nil {
+		b.e.InstallMirrorHook(nil)
+		b.vxlanMirror.Stop()
+		b.vxlanMirror = nil
 	}
 	if b.notifyCancel != nil {
 		b.notifyCancel()

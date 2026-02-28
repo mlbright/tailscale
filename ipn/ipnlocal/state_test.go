@@ -2009,6 +2009,8 @@ func (e *mockEngine) Ping(ip netip.Addr, pingType tailcfg.PingType, size int, cb
 
 func (e *mockEngine) InstallCaptureHook(packet.CaptureCallback) {}
 
+func (e *mockEngine) InstallMirrorHook(packet.MirrorCallback) {}
+
 func (e *mockEngine) Close() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
